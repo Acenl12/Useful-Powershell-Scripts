@@ -61,4 +61,26 @@ if ($existingUser -eq $null) {
     # Log creation and addition to Administrators group
     LogMessage "Local Admin account '$userName' created, managed by LAPS, and added to Administrators group on computer '$computer'."
 } else {
-    # Check if user is already a member of the Administrators grou
+    # Check if user is already a member of the Administrators group
+    $isAdmin = (Get-LocalGroupMember -Group "Administrators" -Member $userName -ErrorAction SilentlyContinue) -ne $null
+
+    if (-not $isAdmin) {
+        # Enable existing local user
+        Enable-LocalUser -Name $userName
+
+        # Set password to be managed by LAPS
+        Set-AdmPwdAccountPassword -Identity $userName
+
+        # Add existing user to local administrators group
+        Add-LocalGroupMember -Group "Administrators" -Member $userName
+
+        # Log enabling and addition to Administrators group
+        LogMessage "Local Admin account '$userName' enabled on computer '$computer' and added to Administrators group."
+    } else {
+        # Log message if user already exists and is managed by LAPS
+        LogMessage "Local Admin account '$userName' already exists, is a member of Administrators group, and is managed by LAPS on computer '$computer'."
+    }
+}
+
+# Log successful execution
+LogMessage "Script executed successfully."
